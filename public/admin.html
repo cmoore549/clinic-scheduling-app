@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Scheduling Admin</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab.active { @apply bg-blue-600 text-white; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <h1 class="text-2xl font-bold text-gray-900">Clinic Scheduling Admin</h1>
+                    <div class="flex items-center space-x-4">
+                        <button id="testConnection" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            Test Athena Connection
+                        </button>
+                        <button id="syncProviders" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Sync Providers
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-white border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex space-x-8">
+                    <button class="tab active py-4 px-1 border-b-2 border-transparent font-medium text-sm" data-tab="appointment-types">
+                        Appointment Types
+                    </button>
+                    <button class="tab py-4 px-1 border-b-2 border-transparent font-medium text-sm" data-tab="providers">
+                        Providers
+                    </button>
+                    <button class="tab py-4 px-1 border-b-2 border-transparent font-medium text-sm" data-tab="settings">
+                        Settings
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Appointment Types Tab -->
+            <div id="appointment-types" class="tab-content active">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">Appointment Types</h2>
+                    <button id="addAppointmentType" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Add New Type
+                    </button>
+                </div>
+
+                <!-- Appointment Types Table -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Athena ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Providers</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointmentTypesTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Providers Tab -->
+            <div id="providers" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">Providers</h2>
+                </div>
+
+                <!-- Providers Table -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specialty</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Athena Provider ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="providersTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">Athena API Settings</h2>
+                
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Athena Base URL</label>
+                            <input type="text" id="athenaBaseUrl" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="https://api.athenahealth.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Practice ID</label>
+                            <input type="text" id="practiceId" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Your Practice ID">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Client ID</label>
+                            <input type="text" id="clientId" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Your Client ID">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Client Secret</label>
+                            <input type="password" id="clientSecret" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Your Client Secret">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <button id="saveSettings" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Add/Edit Appointment Type -->
+    <div id="appointmentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 id="modalTitle" class="text-lg font-medium text-gray-900">Add Appointment Type</h3>
+            </div>
+            
+            <div class="px-6 py-4">
+                <form id="appointmentForm" class="space-y-4">
+                    <input type="hidden" id="appointmentId">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                            <input type="text" id="appointmentName" required class="w-full p-3 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Duration (minutes) *</label>
+                            <input type="number" id="appointmentDuration" required class="w-full p-3 border border-gray-300 rounded-lg">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="appointmentDescription" rows="3" class="w-full p-3 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+                            <select id="appointmentIcon" class="w-full p-3 border border-gray-300 rounded-lg">
+                                <option value="Heart">Heart</option>
+                                <option value="Stethoscope">Stethoscope</option>
+                                <option value="Activity">Activity</option>
+                                <option value="Baby">Baby</option>
+                                <option value="UserCheck">UserCheck</option>
+                                <option value="Eye">Eye</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                            <select id="appointmentColor" class="w-full p-3 border border-gray-300 rounded-lg">
+                                <option value="bg-blue-500">Blue</option>
+                                <option value="bg-red-500">Red</option>
+                                <option value="bg-green-500">Green</option>
+                                <option value="bg-purple-500">Purple</option>
+                                <option value="bg-indigo-500">Indigo</option>
+                                <option value="bg-teal-500">Teal</option>
+                                <option value="bg-yellow-500">Yellow</option>
+                                <option value="bg-pink-500">Pink</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Athena Appointment Type ID *</label>
+                        <input type="text" id="athenaAppointmentTypeId" required class="w-full p-3 border border-gray-300 rounded-lg" placeholder="The corresponding appointment type ID in Athena">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Available Providers</label>
+                        <div id="providerCheckboxes" class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                            <!-- Provider checkboxes will be populated here -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button id="cancelModal" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+                <button id="saveAppointment" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg hidden">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        // Global variables
+        let appointmentTypes = [];
+        let providers = [];
+        let currentEditingId = null;
+
+        // Initialize the admin interface
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTabs();
+            loadAppointmentTypes();
+            loadProviders();
+            setupEventListeners();
+        });
+
+        // Tab functionality
+        function initializeTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active', 'bg-blue-600', 'text-white', 'border-blue-600'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            document.getElementById('addAppointmentType').addEventListener('click', openAddModal);
+            document.getElementById('cancelModal').addEventListener('click', closeModal);
+            document.getElementById('saveAppointment').addEventListener('click', saveAppointmentType);
+            document.getElementById('testConnection').addEventListener('click', testAthenaConnection);
+            document.getElementById('syncProviders').addEventListener('click', syncProviders);
+        }
+
+        // API functions
+        async function apiRequest(url, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(url, options);
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Request failed');
+                }
+
+                return result;
+            } catch (error) {
+                console.error('API request failed:', error);
+                showToast(error.message, 'error');
+                throw error;
+            }
+        }
+
+        // Load appointment types
+        async function loadAppointmentTypes() {
+            try {
+                appointmentTypes = await apiRequest('/api/admin/appointment-types');
+                renderAppointmentTypesTable();
+            } catch (error) {
+                console.error('Failed to load appointment types:', error);
+            }
+        }
+
+        // Load providers
+        async function loadProviders() {
+            try {
+                providers = await apiRequest('/api/admin/providers');
+                renderProvidersTable();
+                renderProviderCheckboxes();
+            } catch (error) {
+                console.error('Failed to load providers:', error);
+            }
+        }
+
+        // Render appointment types table
+        function renderAppointmentTypesTable() {
+            const tbody = document.getElementById('appointmentTypesTable');
+            tbody.innerHTML = '';
+
+            appointmentTypes.forEach(type => {
+                const providerNames = type.providers.map(id => {
+                    const provider = providers.find(p => p.id === id);
+                    return provider ? provider.name : `ID: ${id}`;
+                }).join(', ');
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 ${type.color} rounded-lg flex items-center justify-center text-white text-xs mr-3">
+                                ${type.icon.charAt(0)}
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">${type.name}</div>
+                                <div class="text-sm text-gray-500">${type.description || ''}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${type.duration} min
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${type.athenaAppointmentTypeId || 'Not mapped'}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        <div class="max-w-xs truncate" title="${providerNames}">
+                            ${providerNames || 'No providers assigned'}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                            type.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }">
+                            ${type.active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button onclick="editAppointmentType(${type.id})" class="text-blue-600 hover:text-blue-900">
+                            Edit
+                        </button>
+                        <button onclick="toggleAppointmentType(${type.id})" class="text-${type.active ? 'red' : 'green'}-600 hover:text-${type.active ? 'red' : 'green'}-900">
+                            ${type.active ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Render providers table
+        function renderProvidersTable() {
+            const tbody = document.getElementById('providersTable');
+            tbody.innerHTML = '';
+
+            providers.forEach(provider => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${provider.name}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${provider.specialty}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${provider.athenaProviderId || 'Not mapped'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="editProvider(${provider.id})" class="text-blue-600 hover:text-blue-900">
+                            Edit Mapping
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Render provider checkboxes in modal
+        function renderProviderCheckboxes() {
+            const container = document.getElementById('providerCheckboxes');
+            container.innerHTML = '';
+
+            providers.forEach(provider => {
+                const checkbox = document.createElement('div');
+                checkbox.className = 'flex items-center';
+                checkbox.innerHTML = `
+                    <input type="checkbox" id="provider_${provider.id}" value="${provider.id}" class="mr-2">
+                    <label for="provider_${provider.id}" class="text-sm text-gray-700">
+                        ${provider.name} - ${provider.specialty}
+                    </label>
+                `;
+                container.appendChild(checkbox);
+            });
+        }
+
+        // Modal functions
+        function openAddModal() {
+            currentEditingId = null;
+            document.getElementById('modalTitle').textContent = 'Add Appointment Type';
+            document.getElementById('appointmentForm').reset();
+            document.getElementById('appointmentId').value = '';
+            
+            // Uncheck all provider checkboxes
+            const checkboxes = document.querySelectorAll('#providerCheckboxes input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            document.getElementById('appointmentModal').classList.remove('hidden');
+        }
+
+        function editAppointmentType(id) {
+            const type = appointmentTypes.find(t => t.id === id);
+            if (!type) return;
+
+            currentEditingId = id;
+            document.getElementById('modalTitle').textContent = 'Edit Appointment Type';
+            document.getElementById('appointmentId').value = type.id;
+            document.getElementById('appointmentName').value = type.name;
+            document.getElementById('appointmentDuration').value = type.duration;
+            document.getElementById('appointmentDescription').value = type.description || '';
+            document.getElementById('appointmentIcon').value = type.icon;
+            document.getElementById('appointmentColor').value = type.color;
+            document.getElementById('athenaAppointmentTypeId').value = type.athenaAppointmentTypeId || '';
+
+            // Set provider checkboxes
+            const checkboxes = document.querySelectorAll('#providerCheckboxes input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = type.providers.includes(parseInt(cb.value));
+            });
+
+            document.getElementById('appointmentModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('appointmentModal').classList.add('hidden');
+            currentEditingId = null;
+        }
+
+        // Save appointment type
+        async function saveAppointmentType() {
+            const form = document.getElementById('appointmentForm');
+            const formData = new FormData(form);
+            
+            // Get selected providers
+            const selectedProviders = [];
+            const checkboxes = document.querySelectorAll('#providerCheckboxes input[type="checkbox"]:checked');
+            checkboxes.forEach(cb => selectedProviders.push(parseInt(cb.value)));
+
+            const appointmentData = {
+                name: document.getElementById('appointmentName').value,
+                duration: parseInt(document.getElementById('appointmentDuration').value),
+                description: document.getElementById('appointmentDescription').value,
+                icon: document.getElementById('appointmentIcon').value,
+                color: document.getElementById('appointmentColor').value,
+                athenaAppointmentTypeId: document.getElementById('athenaAppointmentTypeId').value,
+                providers: selectedProviders
+            };
+
+            try {
+                if (currentEditingId) {
+                    // Update existing
+                    await apiRequest(`/api/admin/appointment-types/${currentEditingId}`, 'PUT', appointmentData);
+                    showToast('Appointment type updated successfully');
+                } else {
+                    // Create new
+                    await apiRequest('/api/admin/appointment-types', 'POST', appointmentData);
+                    showToast('Appointment type created successfully');
+                }
+
+                closeModal();
+                loadAppointmentTypes();
+            } catch (error) {
+                console.error('Failed to save appointment type:', error);
+            }
+        }
+
+        // Toggle appointment type active status
+        async function toggleAppointmentType(id) {
+            const type = appointmentTypes.find(t => t.id === id);
+            if (!type) return;
+
+            try {
+                if (type.active) {
+                    await apiRequest(`/api/admin/appointment-types/${id}`, 'DELETE');
+                    showToast('Appointment type deactivated');
+                } else {
+                    await apiRequest(`/api/admin/appointment-types/${id}`, 'PUT', { active: true });
+                    showToast('Appointment type activated');
+                }
+
+                loadAppointmentTypes();
+            } catch (error) {
+                console.error('Failed to toggle appointment type:', error);
+            }
+        }
+
+        // Test Athena connection
+        async function testAthenaConnection() {
+            try {
+                const result = await apiRequest('/api/admin/test-athena');
+                showToast(result.message);
+            } catch (error) {
+                console.error('Connection test failed:', error);
+            }
+        }
+
+        // Sync providers from Athena
+        async function syncProviders() {
+            try {
+                const result = await apiRequest('/api/admin/sync-providers', 'POST');
+                showToast(result.message);
+                loadProviders();
+            } catch (error) {
+                console.error('Provider sync failed:', error);
+            }
+        }
+
+        // Edit provider (simple prompt for now - could be enhanced with a modal)
+        function editProvider(id) {
+            const provider = providers.find(p => p.id === id);
+            if (!provider) return;
+
+            const newAthenaId = prompt(`Enter Athena Provider ID for ${provider.name}:`, provider.athenaProviderId || '');
+            
+            if (newAthenaId !== null) {
+                updateProvider(id, { athenaProviderId: newAthenaId });
+            }
+        }
+
+        // Update provider
+        async function updateProvider(id, data) {
+            try {
+                await apiRequest(`/api/admin/providers/${id}`, 'PUT', data);
+                showToast('Provider updated successfully');
+                loadProviders();
+            } catch (error) {
+                console.error('Failed to update provider:', error);
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg ${
+                type === 'error' ? 'bg-red-600' : 'bg-green-600'
+            } text-white`;
+            
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('appointmentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
